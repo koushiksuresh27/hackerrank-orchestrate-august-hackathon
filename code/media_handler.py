@@ -12,6 +12,7 @@ import base64
 import logging
 import subprocess
 import json
+import whisper
 from pathlib import Path
 from typing import Any
 
@@ -91,71 +92,56 @@ def transcribe_voice_note(media_id: str, store: DataStore) -> str | None:
     Returns:
         Transcription text, or None if transcription failed.
     """
-    if media_id in _transcription_cache:
-        return _transcription_cache[media_id]
-
-    audio_path = store.get_voice_note_path(media_id)
-    if not audio_path or not audio_path.exists():
-        logger.warning(f"Voice note file not found: {media_id}")
-        return None
-
-    logger.info(f"Transcribing voice note: {media_id} ({audio_path})")
-
-    # Try whisper CLI (pip install openai-whisper)
-    transcription = _transcribe_with_whisper_cli(audio_path)
-
-    if transcription is None:
-        # Fallback: try Groq's whisper API if available
-        transcription = _transcribe_with_groq_whisper(audio_path)
-
-    if transcription:
-        _transcription_cache[media_id] = transcription
-        logger.info(
-            f"Transcribed {media_id}: {transcription[:80]}..."
-            if len(transcription) > 80
-            else f"Transcribed {media_id}: {transcription}"
-        )
-    else:
-        logger.warning(f"Failed to transcribe {media_id}")
-
-    return transcription
-
-
-def _transcribe_with_whisper_cli(audio_path: Path) -> str | None:
-    """Transcribe using the local Whisper CLI."""
     try:
-        result = subprocess.run(
-            [
-                "whisper",
-                str(audio_path),
-                "--model", "base",
-                "--language", "en",
-                "--output_format", "json",
-                "--output_dir", str(audio_path.parent),
-            ],
-            capture_output=True,
-            text=True,
-            timeout=120,
-        )
+        if media_id in _transcription_cache:
+            return _transcription_cache[media_id]
 
-        if result.returncode == 0:
-            # Read the JSON output
-            json_path = audio_path.with_suffix(".json")
-            if json_path.exists():
-                with open(json_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                return data.get("text", "").strip()
-        else:
-            logger.debug(f"Whisper CLI failed: {result.stderr[:200]}")
+        audio_path = store.get_voice_note_path(media_id)
+        if not audio_path or not audio_path.exists():
+            logger.warning(f"Voice note file not found: {media_id}")
             return None
-    except FileNotFoundError:
-        logger.debug("Whisper CLI not found — will try fallback")
+
+        logger.info(f"Transcribing voice note: {media_id} ({audio_path})")
+
+        # Try local whisper python API
+        transcription = _transcribe_with_whisper_local(audio_path)
+
+        if transcription is None:
+            # Fallback: try Groq's whisper API if available
+            transcription = _transcribe_with_groq_whisper(audio_path)
+
+        if transcription:
+            _transcription_cache[media_id] = transcription
+            logger.info(
+                f"Transcribed {media_id}: {transcription[:80]}..."
+                if len(transcription) > 80
+                else f"Transcribed {media_id}: {transcription}"
+            )
+        else:
+            logger.warning(f"Failed to transcribe {media_id}")
+
+        return transcription
+    except BaseException as e:
+        logger.error(f"transcribe_voice_note completely failed: {type(e).__name__} - {e}")
         return None
-    except subprocess.TimeoutExpired:
-        logger.warning(f"Whisper CLI timed out for {audio_path}")
-        return None
+
+
+_whisper_model = None
+
+def get_whisper_model():
+    global _whisper_model
+    if _whisper_model is None:
+        _whisper_model = whisper.load_model("tiny")  # tiny is fastest
+    return _whisper_model
+
+def _transcribe_with_whisper_local(audio_path: Path) -> str | None:
+    """Transcribe using the local Whisper Python API."""
+    try:
+        model = get_whisper_model()
+        result = model.transcribe(str(audio_path), fp16=False)
+        return result["text"].strip()
     except Exception as e:
-        logger.debug(f"Whisper CLI error: {e}")
+        logger.debug(f"Whisper local API error: {e}")
         return None
 
 

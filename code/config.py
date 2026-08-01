@@ -48,7 +48,7 @@ PROVIDER_ORDER = ["gemini", "claude", "groq", "rule_based"]
 
 PROVIDER_CONFIG = {
     "gemini": {
-        "model": "gemini-2.0-flash",
+        "model": "gemini-1.5-flash",
         "base_url": "https://generativelanguage.googleapis.com/v1beta",
         "max_tokens": 1024,
         "temperature": 0.1,

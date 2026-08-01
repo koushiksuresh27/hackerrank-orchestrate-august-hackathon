@@ -65,13 +65,13 @@ class ProviderRouter:
             # Skip image for non-vision providers
             img = image_base64 if PROVIDER_CONFIG.get(provider_name, {}).get("supports_vision") else None
 
+            logger.info(f"Trying provider: {provider_name}")
             try:
                 result = self._call_provider(provider_name, prompt, img, image_mime)
                 if result is not None:
                     return result
             except Exception as e:
-                logger.warning(f"Provider {provider_name} failed: {e}")
-                # Don't permanently disable — transient errors are common
+                logger.warning(f"Provider {provider_name} failed with {type(e).__name__}: {str(e)}")
                 continue
 
         logger.error("All LLM providers failed")
@@ -97,16 +97,17 @@ class ProviderRouter:
         self, prompt: str, image_base64: str | None, image_mime: str
     ) -> dict | None:
         """Call Gemini Flash API."""
-        api_key = GEMINI_API_KEY or os.environ.get("GEMINI_API_KEY", "")
-        if not api_key:
+        keys = []
+        primary = GEMINI_API_KEY or os.environ.get("GEMINI_API_KEY", "")
+        if primary: keys.append(primary)
+        backup = os.environ.get("GEMINI_API_KEY_2", "")
+        if backup: keys.append(backup)
+        
+        if not keys:
             logger.debug("Gemini API key not set")
             return None
 
         config = PROVIDER_CONFIG["gemini"]
-        url = (
-            f"{config['base_url']}/models/{config['model']}:generateContent"
-            f"?key={api_key}"
-        )
 
         # Build parts
         parts: list[dict] = []
@@ -129,42 +130,39 @@ class ProviderRouter:
             },
         }
 
-        for attempt in range(MAX_RETRIES):
-            try:
-                resp = requests.post(
-                    url,
-                    json=payload,
-                    timeout=REQUEST_TIMEOUT_SECONDS,
-                )
-
-                if resp.status_code == 200:
-                    data = resp.json()
-                    text = (
-                        data.get("candidates", [{}])[0]
-                        .get("content", {})
-                        .get("parts", [{}])[0]
-                        .get("text", "")
+        for api_key in keys:
+            url = (
+                f"{config['base_url']}/models/{config['model']}:generateContent"
+                f"?key={api_key}"
+            )
+            for attempt in range(MAX_RETRIES):
+                try:
+                    resp = requests.post(
+                        url,
+                        json=payload,
+                        timeout=REQUEST_TIMEOUT_SECONDS,
                     )
-                    return _parse_json_response(text)
 
-                elif resp.status_code == 429:
-                    wait = RETRY_DELAY_SECONDS * (2 ** attempt)
-                    logger.warning(f"Gemini rate limited, waiting {wait}s...")
-                    time.sleep(wait)
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        text = (
+                            data.get("candidates", [{}])[0]
+                            .get("content", {})
+                            .get("parts", [{}])[0]
+                            .get("text", "")
+                        )
+                        return _parse_json_response(text)
+
+                    elif resp.status_code == 429:
+                        logger.warning("Gemini rate limited, trying next key or falling back...")
+                        break
+
+                    else:
+                        raise Exception(f"HTTP {resp.status_code} - {resp.text[:200]}")
+
+                except requests.Timeout:
+                    logger.warning(f"Gemini timeout (attempt {attempt + 1})")
                     continue
-
-                else:
-                    logger.warning(
-                        f"Gemini returned {resp.status_code}: {resp.text[:200]}"
-                    )
-                    return None
-
-            except requests.Timeout:
-                logger.warning(f"Gemini timeout (attempt {attempt + 1})")
-                continue
-            except Exception as e:
-                logger.warning(f"Gemini error: {e}")
-                return None
 
         return None
 
@@ -172,8 +170,13 @@ class ProviderRouter:
         self, prompt: str, image_base64: str | None, image_mime: str
     ) -> dict | None:
         """Call Claude API."""
-        api_key = CLAUDE_API_KEY or os.environ.get("ANTHROPIC_API_KEY", "")
-        if not api_key:
+        keys = []
+        primary = CLAUDE_API_KEY or os.environ.get("ANTHROPIC_API_KEY", "")
+        if primary: keys.append(primary)
+        backup = os.environ.get("ANTHROPIC_API_KEY_2", "")
+        if backup: keys.append(backup)
+        
+        if not keys:
             logger.debug("Claude API key not set")
             return None
 
@@ -201,51 +204,49 @@ class ProviderRouter:
             "messages": [{"role": "user", "content": content}],
         }
 
-        headers = {
-            "x-api-key": api_key,
-            "content-type": "application/json",
-            "anthropic-version": "2023-06-01",
-        }
+        for api_key in keys:
+            headers = {
+                "x-api-key": api_key,
+                "content-type": "application/json",
+                "anthropic-version": "2023-06-01",
+            }
 
-        for attempt in range(MAX_RETRIES):
-            try:
-                resp = requests.post(
-                    f"{config['base_url']}/messages",
-                    json=payload,
-                    headers=headers,
-                    timeout=REQUEST_TIMEOUT_SECONDS,
-                )
-
-                if resp.status_code == 200:
-                    data = resp.json()
-                    text = data.get("content", [{}])[0].get("text", "")
-                    return _parse_json_response(text)
-
-                elif resp.status_code == 429:
-                    wait = RETRY_DELAY_SECONDS * (2 ** attempt)
-                    logger.warning(f"Claude rate limited, waiting {wait}s...")
-                    time.sleep(wait)
-                    continue
-
-                else:
-                    logger.warning(
-                        f"Claude returned {resp.status_code}: {resp.text[:200]}"
+            for attempt in range(MAX_RETRIES):
+                try:
+                    resp = requests.post(
+                        f"{config['base_url']}/messages",
+                        json=payload,
+                        headers=headers,
+                        timeout=REQUEST_TIMEOUT_SECONDS,
                     )
-                    return None
 
-            except requests.Timeout:
-                logger.warning(f"Claude timeout (attempt {attempt + 1})")
-                continue
-            except Exception as e:
-                logger.warning(f"Claude error: {e}")
-                return None
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        text = data.get("content", [{}])[0].get("text", "")
+                        return _parse_json_response(text)
+
+                    elif resp.status_code == 429:
+                        logger.warning("Claude rate limited, trying next key or falling back...")
+                        break
+
+                    else:
+                        raise Exception(f"HTTP {resp.status_code} - {resp.text[:200]}")
+
+                except requests.Timeout:
+                    logger.warning(f"Claude timeout (attempt {attempt + 1})")
+                    continue
 
         return None
 
     def _call_groq(self, prompt: str) -> dict | None:
         """Call Groq API (OpenAI-compatible format, text only)."""
-        api_key = GROQ_API_KEY or os.environ.get("GROQ_API_KEY", "")
-        if not api_key:
+        keys = []
+        primary = GROQ_API_KEY or os.environ.get("GROQ_API_KEY", "")
+        if primary: keys.append(primary)
+        backup = os.environ.get("GROQ_API_KEY_2", "")
+        if backup: keys.append(backup)
+        
+        if not keys:
             logger.debug("Groq API key not set")
             return None
 
@@ -258,47 +259,40 @@ class ProviderRouter:
             "messages": [{"role": "user", "content": prompt}],
         }
 
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        }
+        for api_key in keys:
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            }
 
-        for attempt in range(MAX_RETRIES):
-            try:
-                resp = requests.post(
-                    f"{config['base_url']}/chat/completions",
-                    json=payload,
-                    headers=headers,
-                    timeout=REQUEST_TIMEOUT_SECONDS,
-                )
-
-                if resp.status_code == 200:
-                    data = resp.json()
-                    text = (
-                        data.get("choices", [{}])[0]
-                        .get("message", {})
-                        .get("content", "")
+            for attempt in range(MAX_RETRIES):
+                try:
+                    resp = requests.post(
+                        f"{config['base_url']}/chat/completions",
+                        json=payload,
+                        headers=headers,
+                        timeout=REQUEST_TIMEOUT_SECONDS,
                     )
-                    return _parse_json_response(text)
 
-                elif resp.status_code == 429:
-                    wait = RETRY_DELAY_SECONDS * (2 ** attempt)
-                    logger.warning(f"Groq rate limited, waiting {wait}s...")
-                    time.sleep(wait)
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        text = (
+                            data.get("choices", [{}])[0]
+                            .get("message", {})
+                            .get("content", "")
+                        )
+                        return _parse_json_response(text)
+
+                    elif resp.status_code == 429:
+                        logger.warning("Groq rate limited, trying next key or falling back...")
+                        break
+
+                    else:
+                        raise Exception(f"HTTP {resp.status_code} - {resp.text[:200]}")
+
+                except requests.Timeout:
+                    logger.warning(f"Groq timeout (attempt {attempt + 1})")
                     continue
-
-                else:
-                    logger.warning(
-                        f"Groq returned {resp.status_code}: {resp.text[:200]}"
-                    )
-                    return None
-
-            except requests.Timeout:
-                logger.warning(f"Groq timeout (attempt {attempt + 1})")
-                continue
-            except Exception as e:
-                logger.warning(f"Groq error: {e}")
-                return None
 
         return None
 

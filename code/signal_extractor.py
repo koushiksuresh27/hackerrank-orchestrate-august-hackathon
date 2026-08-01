@@ -85,6 +85,7 @@ def extract_signals(message: dict, store: DataStore) -> dict:
     # --- SCAM SIGNALS ---
     is_otp_scam = bool(_OTP_REGEX.search(msg_text_lower))
     is_chain_forward = forwarded_count > 5 and bool(_CHAIN_REGEX.search(msg_text_lower))
+    is_high_forward = forwarded_count > 5
     is_prompt_injection = bool(_INJECTION_REGEX.search(msg_text_lower))
     
     is_domain_mismatch = False
@@ -171,7 +172,7 @@ def extract_signals(message: dict, store: DataStore) -> dict:
     if user_reply_rate < 0.1 and not is_high_dismissal_user:
         ambiguity_score += 0.15
         
-    if forwarded_count > 2:
+    if is_high_forward or forwarded_count > 2:
         ambiguity_score += 0.15
         
     ambiguity_score = min(ambiguity_score, 1.0)
@@ -179,6 +180,7 @@ def extract_signals(message: dict, store: DataStore) -> dict:
     return {
         "is_otp_scam": is_otp_scam,
         "is_chain_forward": is_chain_forward,
+        "is_high_forward": is_high_forward,
         "is_prompt_injection": is_prompt_injection,
         "is_domain_mismatch": is_domain_mismatch,
         "is_suspicious_business": is_suspicious_business,
@@ -228,6 +230,15 @@ def early_exit(signals: dict) -> dict | None:
             "message_type": "forward",
             "reason": "High-forward chain message with blessing or luck keywords has no personal relevance to the user.",
             "confidence": 0.88,
+            "evidence_message_ids": "none"
+        }
+        
+    if signals.get("is_high_forward"):
+        return {
+            "action": "mute",
+            "message_type": "forward",
+            "reason": "Message has been forwarded extensively and is unlikely to be personally relevant to the user.",
+            "confidence": 0.85,
             "evidence_message_ids": "none"
         }
         

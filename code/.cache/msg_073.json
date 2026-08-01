@@ -1,7 +1,7 @@
 {
-  "action": "digest",
-  "message_type": "unknown",
-  "confidence": 0.78,
-  "reason": "Message is useful but not urgent enough to interrupt the user now.",
-  "evidence_message_ids": "message_0087;message_0184;message_0088"
+  "action": "mute",
+  "message_type": "forward",
+  "confidence": 0.85,
+  "reason": "Message shows risk or repetition signals that do not warrant interrupting the user.",
+  "evidence_message_ids": "none"
 }
