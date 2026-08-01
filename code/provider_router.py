@@ -17,9 +17,6 @@ import requests
 from config import (
     PROVIDER_ORDER,
     PROVIDER_CONFIG,
-    GEMINI_API_KEY,
-    CLAUDE_API_KEY,
-    GROQ_API_KEY,
     MAX_RETRIES,
     RETRY_DELAY_SECONDS,
     REQUEST_TIMEOUT_SECONDS,
@@ -65,13 +62,13 @@ class ProviderRouter:
             # Skip image for non-vision providers
             img = image_base64 if PROVIDER_CONFIG.get(provider_name, {}).get("supports_vision") else None
 
-            logger.info(f"Trying provider: {provider_name}")
+            logger.info(f"[provider_router] Trying provider: {provider_name}")
             try:
                 result = self._call_provider(provider_name, prompt, img, image_mime)
                 if result is not None:
                     return result
             except Exception as e:
-                logger.warning(f"Provider {provider_name} failed with {type(e).__name__}: {str(e)}")
+                logger.warning(f"[provider_router] {provider_name} failed: {type(e).__name__}: {str(e)[:100]}")
                 continue
 
         logger.error("All LLM providers failed")
@@ -97,11 +94,10 @@ class ProviderRouter:
         self, prompt: str, image_base64: str | None, image_mime: str
     ) -> dict | None:
         """Call Gemini Flash API."""
-        keys = []
-        primary = GEMINI_API_KEY or os.environ.get("GEMINI_API_KEY", "")
-        if primary: keys.append(primary)
-        backup = os.environ.get("GEMINI_API_KEY_2", "")
-        if backup: keys.append(backup)
+        keys = [k for k in [
+            os.getenv("GEMINI_API_KEY"),
+            os.getenv("GEMINI_API_KEY_2"),
+        ] if k]
         
         if not keys:
             logger.debug("Gemini API key not set")
@@ -170,11 +166,10 @@ class ProviderRouter:
         self, prompt: str, image_base64: str | None, image_mime: str
     ) -> dict | None:
         """Call Claude API."""
-        keys = []
-        primary = CLAUDE_API_KEY or os.environ.get("ANTHROPIC_API_KEY", "")
-        if primary: keys.append(primary)
-        backup = os.environ.get("ANTHROPIC_API_KEY_2", "")
-        if backup: keys.append(backup)
+        keys = [k for k in [
+            os.getenv("ANTHROPIC_API_KEY"),
+            os.getenv("ANTHROPIC_API_KEY_2"),
+        ] if k]
         
         if not keys:
             logger.debug("Claude API key not set")
@@ -240,11 +235,11 @@ class ProviderRouter:
 
     def _call_groq(self, prompt: str) -> dict | None:
         """Call Groq API (OpenAI-compatible format, text only)."""
-        keys = []
-        primary = GROQ_API_KEY or os.environ.get("GROQ_API_KEY", "")
-        if primary: keys.append(primary)
-        backup = os.environ.get("GROQ_API_KEY_2", "")
-        if backup: keys.append(backup)
+        keys = [k for k in [
+            os.getenv("GROQ_API_KEY"),
+            os.getenv("GROQ_API_KEY_2"),
+            os.getenv("GROQ_API_KEY_3"),
+        ] if k]
         
         if not keys:
             logger.debug("Groq API key not set")

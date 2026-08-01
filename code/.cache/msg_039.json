@@ -1,7 +1,7 @@
 {
   "action": "notify",
-  "message_type": "personal",
-  "confidence": 0.82,
-  "reason": "The message contains a direct mention of the user.",
+  "message_type": "urgent",
+  "confidence": 0.89,
+  "reason": "The message is from a school group admin, contains a direct mention of the user, and has a time-sensitive request related to a field-trip list.",
   "evidence_message_ids": "message_0255;message_0037;message_0134"
 }

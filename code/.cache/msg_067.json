@@ -1,7 +1,7 @@
 {
-  "action": "digest",
-  "message_type": "unknown",
-  "confidence": 0.78,
-  "reason": "Message is useful but not urgent enough to interrupt the user now.",
+  "action": "notify",
+  "message_type": "urgent",
+  "confidence": 0.89,
+  "reason": "A trusted group admin sent a time-sensitive update that should interrupt the user.",
   "evidence_message_ids": "message_0410;message_0130;message_0150"
 }

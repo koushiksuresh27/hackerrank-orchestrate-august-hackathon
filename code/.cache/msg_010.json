@@ -1,7 +1,7 @@
 {
   "action": "digest",
-  "message_type": "unknown",
-  "confidence": 0.78,
-  "reason": "Message is useful but not urgent enough to interrupt the user now.",
+  "message_type": "business_update",
+  "confidence": 0.8,
+  "reason": "The message is from a verified business the user has engaged with before, but it's a low-priority feedback request that can wait.",
   "evidence_message_ids": "message_0011;message_0242;message_0076"
 }

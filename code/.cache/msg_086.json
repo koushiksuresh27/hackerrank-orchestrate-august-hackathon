@@ -1,7 +1,7 @@
 {
-  "action": "mute",
-  "message_type": "scam",
-  "confidence": 0.82,
-  "reason": "The message contains suspicious signals that suggest it may be a scam.",
+  "action": "notify",
+  "message_type": "business_update",
+  "confidence": 0.9,
+  "reason": "A verified business is sending an update that matches the user's recent travel booking history with a time-sensitive change in airport pickup time.",
   "evidence_message_ids": "message_0222"
 }

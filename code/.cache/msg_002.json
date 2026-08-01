@@ -1,7 +1,7 @@
 {
   "action": "notify",
-  "message_type": "personal",
-  "confidence": 0.82,
-  "reason": "The message contains a direct mention of the user.",
+  "message_type": "urgent",
+  "confidence": 0.89,
+  "reason": "The message is from a work context, contains a direct mention, and has a time-sensitive request that requires the user's attention before a meeting.",
   "evidence_message_ids": "message_0371;message_0230;message_0170"
 }

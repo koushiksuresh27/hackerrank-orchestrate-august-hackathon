@@ -4,6 +4,7 @@ import requests
 from dotenv import load_dotenv
 
 
+
 load_dotenv()
 # add to debug_providers.py and run
 import google.generativeai as genai
@@ -23,22 +24,17 @@ print("GEMINI_API_KEY_2:", (os.getenv("GEMINI_API_KEY_2") or "NOT FOUND")[:20] +
 print("GROQ_API_KEY:", (os.getenv("GROQ_API_KEY") or "NOT FOUND")[:20] + "...")
 print("GROQ_API_KEY_2:", (os.getenv("GROQ_API_KEY_2") or "NOT FOUND")[:20] + "...")
 
-print("\n=== GEMINI TEST ===")
+print("\n=== GEMINI 2.0 FLASH TEST (new google-genai SDK) ===")
 try:
-    api_key = os.getenv("GEMINI_API_KEY")
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
-    payload = {
-        "contents": [{"parts": [{"text": "Say hello in one word."}]}]
-    }
-    resp = requests.post(url, json=payload, timeout=10)
-    if resp.status_code == 200:
-        data = resp.json()
-        text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-        print("Gemini OK:", text.strip())
-    else:
-        print(f"Gemini FAILED: HTTP {resp.status_code} - {resp.text}")
+    from google import genai as google_genai
+    client = google_genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents="Say hello in one word."
+    )
+    print("Gemini OK:", response.text.strip())
 except Exception as e:
-    print("Gemini FAILED:", type(e).__name__, str(e))
+    print("Gemini FAILED:", type(e).__name__, str(e)[:200])
 
 print("\n=== CLAUDE TEST ===")
 try:

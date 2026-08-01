@@ -1,7 +1,7 @@
 {
-  "action": "digest",
-  "message_type": "unknown",
-  "confidence": 0.78,
-  "reason": "Message is useful but not urgent enough to interrupt the user now.",
+  "action": "notify",
+  "message_type": "personal",
+  "confidence": 0.88,
+  "reason": "The message is a personal update from a known sender with a history of engagement and contains a time-sensitive request for action.",
   "evidence_message_ids": "message_0390;message_0332;message_0231"
 }

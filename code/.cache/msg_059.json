@@ -1,7 +1,7 @@
 {
-  "action": "digest",
-  "message_type": "unknown",
-  "confidence": 0.78,
-  "reason": "Message is useful but not urgent enough to interrupt the user now.",
+  "action": "mute",
+  "message_type": "scam",
+  "confidence": 0.89,
+  "reason": "The message asks for urgent account details through a suspicious flow, consistent with a scam pattern.",
   "evidence_message_ids": "message_0173;message_0174;message_0214"
 }

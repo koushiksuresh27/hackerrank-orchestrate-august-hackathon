@@ -1,7 +1,7 @@
 {
   "action": "mute",
   "message_type": "scam",
-  "confidence": 0.82,
-  "reason": "The message contains suspicious signals that suggest it may be a scam.",
+  "confidence": 0.85,
+  "reason": "The message is from a verified business but has a domain mismatch and asks for engagement through a suspicious link, consistent with a scam pattern.",
   "evidence_message_ids": "message_0138;message_0137"
 }

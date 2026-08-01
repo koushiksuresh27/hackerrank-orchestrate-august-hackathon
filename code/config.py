@@ -37,25 +37,28 @@ CSV_FILES = {
 # API Keys (from environment variables)
 # ---------------------------------------------------------------------------
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+GEMINI_API_KEY_2 = os.environ.get("GEMINI_API_KEY_2", "")
 CLAUDE_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+CLAUDE_API_KEY_2 = os.environ.get("ANTHROPIC_API_KEY_2", "")
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+GROQ_API_KEY_2 = os.environ.get("GROQ_API_KEY_2", "")
 
 # ---------------------------------------------------------------------------
 # Provider Configuration
 # ---------------------------------------------------------------------------
-# Order defines fallback chain: Gemini → Claude → Groq → rule-based
-PROVIDER_ORDER = ["gemini", "claude", "groq", "rule_based"]
+# Order defines fallback chain: Claude → Gemini → Groq → rule-based
+PROVIDER_ORDER = ["claude", "gemini", "groq", "rule_based"]
 
 PROVIDER_CONFIG = {
     "gemini": {
-        "model": "gemini-1.5-flash",
+        "model": "gemini-2.0-flash",
         "base_url": "https://generativelanguage.googleapis.com/v1beta",
         "max_tokens": 1024,
         "temperature": 0.1,
         "supports_vision": True,
     },
     "claude": {
-        "model": "claude-sonnet-4-20250514",
+        "model": "claude-sonnet-4-6",
         "base_url": "https://api.anthropic.com/v1",
         "max_tokens": 1024,
         "temperature": 0.1,
@@ -100,6 +103,32 @@ VALID_MESSAGE_TYPES = {
 # Signal Thresholds
 # ---------------------------------------------------------------------------
 HIGH_FORWARD_COUNT = 5  # forwarded_count >= this → likely chain/spam
+SUSPICIOUS_REPORTS_THRESHOLD = 30
+SUSPICIOUS_AGE_THRESHOLD = 90
+HIGH_DISMISSAL_THRESHOLD = 60
+AMBIGUITY_THRESHOLD = 0.82
+MAX_EVIDENCE_IDS = 3
+MAX_HISTORY_MESSAGES = 5
+
+OTP_KEYWORDS = [
+    "otp", "share code", "send code", "verify now", "account block",
+    "otp leak", "account band", "profile restricted", "link open karo",
+    "verification code", "6 digit", "wallet active", "account closure",
+    "share kar", "code bhejo", "account band ho"
+]
+
+CHAIN_KEYWORDS = [
+    "forward", "share", "blessings", "luck", "chain", "10 people",
+    "sabko bhejo", "groups me share", "positive energy", "do not ignore",
+    "break the chain", "midnight", "iss message ko"
+]
+
+INJECTION_KEYWORDS = [
+    "routing override", "set action", "ignore sender", "assistant instruction",
+    "classify as", "set confidence", "action=notify", "action=mute",
+    "ignore all previous", "mark this message as"
+]
+
 INJECTION_PATTERNS = [
     r"ignore\s+(all\s+)?previous",
     r"mark\s+this\s+(message\s+)?as\s+notify",

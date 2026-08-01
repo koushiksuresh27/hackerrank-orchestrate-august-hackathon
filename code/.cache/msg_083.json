@@ -1,7 +1,7 @@
 {
-  "action": "digest",
-  "message_type": "unknown",
-  "confidence": 0.78,
-  "reason": "Message is useful but not urgent enough to interrupt the user now.",
+  "action": "notify",
+  "message_type": "urgent",
+  "confidence": 0.88,
+  "reason": "The message is from a work context and contains a direct request for comments from an admin before a specific deadline.",
   "evidence_message_ids": "message_0219"
 }

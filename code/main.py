@@ -16,6 +16,10 @@ import logging
 import sys
 import time
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load env variables before any other imports
+load_dotenv()
 
 # Setup logging before imports
 logging.basicConfig(
@@ -125,6 +129,8 @@ def main():
             # Save result immediately to disk (crash-safe)
             cache.save(message_id, validated)
             results[message_id] = validated
+
+            time.sleep(2)  # 2 seconds between messages = 30/min max
 
             # Progress logging
             if (i + 1) % 10 == 0 or (i + 1) == total_messages:
