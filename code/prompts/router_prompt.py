@@ -129,6 +129,15 @@ relationship with sender.
   mute or digest for borderline cases
 - High reply users → lean toward notify for personal messages
 - Quiet hours → prefer digest unless urgent or direct mention
+
+## SENDER-STATED URGENCY
+If the message contains any of these phrases: "nothing urgent", "no rush", "no urgency", "koi urgency nahi", "whenever convenient", "no need to respond", "no need to reply", "later when free", "call me later", "nothing blocking" — route to digest, not notify. Only override this if there is also an explicit clock deadline in the same message (e.g. "by 6 PM", "before midnight").
+
+## REASON QUALITY
+Never write "risk or repetition signals" in the reason field. Never write vague phrases like "low priority content" or "does not warrant interruption". Always name the actual signal: the domain mismatch, the opt-out status, the forward count, the specific scam keyword, or the sender pattern. Be specific.
+
+## SCAM VS FORWARD
+If a message requests OTP, payment, account credentials, bank details, or asks the user to click a verification link — use message_type=scam regardless of forwarded_count. Use message_type=forward only for chain blessings, health tips, motivational shares, and news forwards with no financial or credential request. A forwarded scam is still a scam.
 """
 
 # ---------------------------------------------------------------------------

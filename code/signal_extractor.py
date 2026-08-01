@@ -6,13 +6,33 @@ from data_loader import DataStore
 
 logger = logging.getLogger(__name__)
 
-# Scam signal patterns
-_OTP_PATTERNS = [
-    "otp", "share code", "send code", "verify now", "account block",
-    "otp leak", "account band", "profile restricted", "link open karo",
-    "verification code", "6 digit", "wallet active", "account closure"
+OTP_REQUEST_PHRASES = [
+    "share otp", "send otp", "enter otp",
+    "otp bhejo", "otp batao", "otp daal do",
+    "share the otp", "send the code",
+    "verify otp", "share your otp", "send your otp",
 ]
-_OTP_REGEX = re.compile("|".join(re.escape(p) for p in _OTP_PATTERNS), re.IGNORECASE)
+
+def is_otp_request(text: str) -> bool:
+    t = text.lower()
+    return any(phrase in t for phrase in OTP_REQUEST_PHRASES)
+
+URGENCY_OVERRIDE_PHRASES = [
+    "minutes", "mins", "min me", "minute",
+    "leaving", "nikal", "jaldi", "abhi", "aaj", "now",
+    "gate", "tanker", "arriving",
+]
+
+def should_early_exit_high_forward(
+    text: str, forwarded_count: int, sender_is_admin: bool, threshold: int = 8
+) -> bool:
+    if forwarded_count < threshold:
+        return False
+    t = text.lower()
+    has_urgency = any(phrase in t for phrase in URGENCY_OVERRIDE_PHRASES)
+    if has_urgency and sender_is_admin:
+        return False
+    return True
 
 _CHAIN_PATTERNS = [
     "forward", "share", "blessings", "luck", "chain", "10 people",
@@ -83,7 +103,7 @@ def extract_signals(message: dict, store: DataStore) -> dict:
     sender_history = [m for m in history if m.get("sender_user_id") == sender_id]
 
     # --- SCAM SIGNALS ---
-    is_otp_scam = bool(_OTP_REGEX.search(msg_text_lower))
+    is_otp_scam = is_otp_request(msg_text)
     is_chain_forward = forwarded_count > 5 and bool(_CHAIN_REGEX.search(msg_text_lower))
     is_high_forward = forwarded_count > 5
     is_prompt_injection = bool(_INJECTION_REGEX.search(msg_text_lower))
@@ -119,6 +139,8 @@ def extract_signals(message: dict, store: DataStore) -> dict:
     # --- GROUP SIGNALS ---
     is_group_muted = str(group_member.get("group_muted_by_user", "")).lower() in ["1", "true"]
     is_user_group_admin = str(group_member.get("role", "")).lower() == "admin"
+    sender_group_member = store.get_group_member(sender_id, group_id) or {}
+    sender_is_admin = str(sender_group_member.get("role", "")).lower() == "admin"
     is_direct_mention = user_id in msg_text if user_id else False
 
     # --- BUSINESS SIGNALS ---
@@ -178,6 +200,9 @@ def extract_signals(message: dict, store: DataStore) -> dict:
     ambiguity_score = min(ambiguity_score, 1.0)
 
     return {
+        "msg_text": msg_text,
+        "forwarded_count": forwarded_count,
+        "sender_is_admin": sender_is_admin,
         "is_otp_scam": is_otp_scam,
         "is_chain_forward": is_chain_forward,
         "is_high_forward": is_high_forward,
@@ -233,7 +258,11 @@ def early_exit(signals: dict) -> dict | None:
             "evidence_message_ids": "none"
         }
         
-    if signals.get("is_high_forward"):
+    if should_early_exit_high_forward(
+        text=signals.get("msg_text", ""),
+        forwarded_count=signals.get("forwarded_count", 0),
+        sender_is_admin=signals.get("sender_is_admin", False)
+    ):
         return {
             "action": "mute",
             "message_type": "forward",
