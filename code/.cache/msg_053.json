@@ -1,7 +1,0 @@
-{
-  "action": "mute",
-  "message_type": "forward",
-  "confidence": 0.85,
-  "reason": "Message shows risk or repetition signals that do not warrant interrupting the user.",
-  "evidence_message_ids": "none"
-}

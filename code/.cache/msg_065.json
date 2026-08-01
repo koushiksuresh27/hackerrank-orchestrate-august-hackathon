@@ -1,7 +1,0 @@
-{
-  "action": "notify",
-  "message_type": "business_update",
-  "confidence": 0.89,
-  "reason": "A trusted sender sent a time-sensitive message that warrants immediate attention.",
-  "evidence_message_ids": "message_0186;message_0185;message_0261"
-}

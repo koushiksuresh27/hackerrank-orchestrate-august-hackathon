@@ -1,7 +1,0 @@
-{
-  "action": "digest",
-  "message_type": "business_update",
-  "confidence": 0.8,
-  "reason": "Message is useful but not urgent enough to interrupt the user now.",
-  "evidence_message_ids": "message_0126;message_0125;message_0281"
-}

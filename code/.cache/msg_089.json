@@ -1,7 +1,0 @@
-{
-  "action": "notify",
-  "message_type": "personal",
-  "confidence": 0.88,
-  "reason": "A personal message from an unknown sender contains time-sensitive information that requires the user's attention.",
-  "evidence_message_ids": "none"
-}

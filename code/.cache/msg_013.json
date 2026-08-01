@@ -1,7 +1,0 @@
-{
-  "action": "mute",
-  "message_type": "promotion",
-  "confidence": 0.85,
-  "reason": "The message is promotional and the sender has a history of dismissed messages, indicating low relevance to the user.",
-  "evidence_message_ids": "message_0082;message_0081"
-}

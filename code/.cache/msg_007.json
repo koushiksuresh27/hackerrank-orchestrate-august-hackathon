@@ -1,7 +1,0 @@
-{
-  "action": "notify",
-  "message_type": "event",
-  "confidence": 0.89,
-  "reason": "A trusted group admin sent an update about an upcoming event that requires user action.",
-  "evidence_message_ids": "message_0070;message_0069"
-}

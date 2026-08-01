@@ -1,7 +1,0 @@
-{
-  "action": "notify",
-  "message_type": "business_update",
-  "confidence": 0.9,
-  "reason": "A verified business is sending an update that matches the user's recent return pickup history and requires immediate action.",
-  "evidence_message_ids": "message_0153;message_0291;message_0154"
-}

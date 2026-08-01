@@ -1,7 +1,0 @@
-{
-  "action": "mute",
-  "message_type": "scam",
-  "confidence": 0.89,
-  "reason": "The message asks for urgent verification through a suspicious flow and contains a prompt injection attempt, consistent with a scam pattern.",
-  "evidence_message_ids": "message_0087;message_0184;message_0088"
-}

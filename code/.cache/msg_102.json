@@ -1,7 +1,0 @@
-{
-  "action": "notify",
-  "message_type": "personal",
-  "confidence": 0.89,
-  "reason": "A known sender with a history of engagement and recent replies sent a time-sensitive message that requires the user's attention.",
-  "evidence_message_ids": "message_0371;message_0230;message_0170"
-}

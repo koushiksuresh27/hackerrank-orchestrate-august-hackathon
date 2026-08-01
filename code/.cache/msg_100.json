@@ -1,7 +1,0 @@
-{
-  "action": "notify",
-  "message_type": "urgent",
-  "confidence": 0.89,
-  "reason": "The message is from a known sender with a history of engagement and contains a time-sensitive request with a deadline.",
-  "evidence_message_ids": "message_0055;message_0249;message_0228"
-}

@@ -1,7 +1,0 @@
-{
-  "action": "digest",
-  "message_type": "business_update",
-  "confidence": 0.8,
-  "reason": "The message is from a verified business with which the user has a recent purchase history, but it is not urgent or time-sensitive.",
-  "evidence_message_ids": "message_0072;message_0071;message_0296"
-}

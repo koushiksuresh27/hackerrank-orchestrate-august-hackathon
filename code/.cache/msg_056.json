@@ -1,7 +1,0 @@
-{
-  "action": "notify",
-  "message_type": "urgent",
-  "confidence": 0.89,
-  "reason": "The message is from a group context, contains a direct mention of the user, and has time-sensitive content requiring a confirmation or action.",
-  "evidence_message_ids": "message_0226;message_0168;message_0167"
-}

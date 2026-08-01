@@ -112,78 +112,70 @@ class RoutingAgent:
         fallback["evidence_message_ids"] = evidence_ids
         return fallback
 
-    def _rule_based_fallback(
-        self, message: dict, context: dict, signals: dict
-    ) -> dict:
-        """
-        Rule-based fallback for when all LLM providers fail.
-        Handles only clear-cut cases to avoid brittle heuristics.
-        """
+    def _rule_based_fallback(self, message, context, signals):
         msg = context.get("message", {})
         text = (msg.get("message_text", "") or "").lower()
-        forwarded = msg.get("forwarded_count", 0)
         conv_type = msg.get("conversation_type", "")
-
-        # Scam signals: domain mismatch + OTP/password keywords
-        if signals.get("is_domain_mismatch") or signals.get("is_prompt_injection"):
+        business = context.get("business", {}) or {}
+        group = context.get("group", {}) or {}
+        membership = context.get("user_group_membership", {}) or {}
+    
+        if signals.get("is_prompt_injection"):
             return {
                 "action": "mute",
                 "message_type": "scam",
-                "reason": "The message contains suspicious signals that suggest it may be a scam.",
-                "confidence": 0.82,
+                "reason": "Message contains prompt injection attempt — instructions embedded in text to manipulate the routing system.",
+                "confidence": 0.91,
             }
-
-        # High forward → mute as forward/spam
+    
+        if signals.get("is_domain_mismatch"):
+            official = business.get("official_domain", "unknown")
+            used = business.get("domain_used_by_sender", "unknown")
+            return {
+                "action": "mute",
+                "message_type": "scam",
+                "reason": f"Business domain mismatch: official domain is {official} but sender used {used}. High fraud signal.",
+                "confidence": 0.85,
+            }
+    
         if signals.get("is_chain_forward"):
+            count = msg.get("forwarded_count", 0)
             return {
                 "action": "mute",
                 "message_type": "forward",
-                "reason": "The message has a high forward count suggesting it is a chain message.",
+                "reason": f"Forwarded {count} times with no actionable content — consistent with chain or mass-forward pattern.",
                 "confidence": 0.83,
             }
-
-        # Muted group without direct mention → mute
+    
         if signals.get("is_group_muted") and not signals.get("is_direct_mention"):
+            group_name = group.get("group_name", "this group")
+            dismissed = membership.get("notifications_dismissed_30d", 0)
             return {
-                "action": "mute",
+                "action": "digest",
                 "message_type": "unknown",
-                "reason": "The message is from a group the user has muted.",
+                "reason": f"User has muted {group_name} and dismissed {dismissed} notifications from it in the last 30 days. No direct mention found.",
                 "confidence": 0.80,
             }
-
-        # OTP/password keywords from unknown sender
-        scam_keywords = ["otp", "password", "verify now", "account blocked",
-                         "payment failed", "click here", "act now"]
-        if signals.get("sender_is_known") is False and any(kw in text for kw in scam_keywords):
-            return {
-                "action": "mute",
-                "message_type": "scam",
-                "reason": "This is the first message from the sender and it asks for sensitive verification or payment.",
-                "confidence": 0.85,
-            }
-
-        # Direct mention → notify
-        if signals.get("is_direct_mention"):
-            return {
-                "action": "notify",
-                "message_type": "personal",
-                "reason": "The message contains a direct mention of the user.",
-                "confidence": 0.82,
-            }
-
-        # Opted-out promotions → mute
+    
         if signals.get("is_opted_out"):
             return {
                 "action": "mute",
                 "message_type": "promotion",
-                "reason": "The user has opted out of promotions from this business.",
-                "confidence": 0.80,
+                "reason": "User has explicitly opted out of promotions from this business.",
+                "confidence": 0.82,
             }
-
-        # Default: digest with low confidence
+    
+        if signals.get("is_direct_mention"):
+            return {
+                "action": "notify",
+                "message_type": "personal",
+                "reason": "Message contains a direct @mention of the user in a group context.",
+                "confidence": 0.82,
+            }
+    
         return {
             "action": "digest",
             "message_type": "unknown",
-            "reason": "Unable to determine urgency. Routing to digest as a safe default.",
+            "reason": "No strong urgency or risk signals detected. Routing to digest as a safe default.",
             "confidence": 0.78,
         }

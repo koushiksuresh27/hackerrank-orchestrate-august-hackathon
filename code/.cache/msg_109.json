@@ -1,7 +1,0 @@
-{
-  "action": "mute",
-  "message_type": "scam",
-  "confidence": 0.85,
-  "reason": "The message asks for urgent payment through a QR code, consistent with a scam pattern, despite being from a trusted admin.",
-  "evidence_message_ids": "message_0152;message_0151;message_0237"
-}

@@ -1,7 +1,0 @@
-{
-  "action": "notify",
-  "message_type": "personal",
-  "confidence": 0.88,
-  "reason": "The message is from a known sender with a history of engagement and contains time-sensitive content related to a work review.",
-  "evidence_message_ids": "message_0055;message_0249;message_0228"
-}

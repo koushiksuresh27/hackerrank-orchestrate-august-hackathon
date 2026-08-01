@@ -1,7 +1,0 @@
-{
-  "action": "notify",
-  "message_type": "personal",
-  "confidence": 0.88,
-  "reason": "A trusted sender sent a time-sensitive message that warrants immediate attention.",
-  "evidence_message_ids": "message_0374;message_0285;message_0120"
-}

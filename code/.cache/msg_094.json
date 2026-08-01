@@ -1,7 +1,0 @@
-{
-  "action": "mute",
-  "message_type": "promotion",
-  "confidence": 0.85,
-  "reason": "The user has a high dismissal rate and the message is a promotional offer that can be considered low priority or potentially ignored.",
-  "evidence_message_ids": "none"
-}

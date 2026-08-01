@@ -1,7 +1,0 @@
-{
-  "action": "digest",
-  "message_type": "personal",
-  "confidence": 0.82,
-  "reason": "The sender is known and has a history of engagement with the user, but the message is non-urgent and can be read later.",
-  "evidence_message_ids": "message_0226;message_0168;message_0167"
-}

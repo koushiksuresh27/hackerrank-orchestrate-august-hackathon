@@ -1,7 +1,0 @@
-{
-  "action": "mute",
-  "message_type": "scam",
-  "confidence": 0.89,
-  "reason": "The message asks for urgent payment or account verification through a suspicious flow, consistent with the sender's past scam patterns.",
-  "evidence_message_ids": "message_0389;message_0164;message_0204"
-}

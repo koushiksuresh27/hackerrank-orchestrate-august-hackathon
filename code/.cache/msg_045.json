@@ -1,7 +1,0 @@
-{
-  "action": "notify",
-  "message_type": "urgent",
-  "confidence": 0.89,
-  "reason": "A known sender in the resident group is sending a time-sensitive update about a package delivery that requires the user's immediate action.",
-  "evidence_message_ids": "message_0146;message_0145"
-}

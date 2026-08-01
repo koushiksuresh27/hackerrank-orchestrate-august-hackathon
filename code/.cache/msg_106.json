@@ -1,7 +1,0 @@
-{
-  "action": "notify",
-  "message_type": "personal",
-  "confidence": 0.88,
-  "reason": "The sender is known and has a history of messages that the user has engaged with, and the current message contains time-sensitive information about...",
-  "evidence_message_ids": "message_0234;message_0376;message_0377"
-}

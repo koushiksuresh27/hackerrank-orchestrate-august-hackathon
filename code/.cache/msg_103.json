@@ -1,7 +1,0 @@
-{
-  "action": "notify",
-  "message_type": "personal",
-  "confidence": 0.88,
-  "reason": "The message is a personal update from a known sender with a history of engagement and contains a time-sensitive request for action.",
-  "evidence_message_ids": "message_0390;message_0332;message_0231"
-}

@@ -1,7 +1,0 @@
-{
-  "action": "digest",
-  "message_type": "personal",
-  "confidence": 0.8,
-  "reason": "The message is a non-urgent discussion about plans and does not require immediate attention from the user.",
-  "evidence_message_ids": "message_0192;message_0191"
-}

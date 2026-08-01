@@ -1,7 +1,0 @@
-{
-  "action": "digest",
-  "message_type": "business_update",
-  "confidence": 0.8,
-  "reason": "The message is a business update from a known sender, but the user's engagement pattern and the lack of urgency suggest it can wait.",
-  "evidence_message_ids": "message_0156;message_0155;message_0279"
-}

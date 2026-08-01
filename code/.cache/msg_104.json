@@ -1,7 +1,0 @@
-{
-  "action": "mute",
-  "message_type": "personal",
-  "confidence": 0.85,
-  "reason": "Message shows risk or repetition signals that do not warrant interrupting the user.",
-  "evidence_message_ids": "message_0115;message_0232;message_0050"
-}

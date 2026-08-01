@@ -1,7 +1,0 @@
-{
-  "action": "mute",
-  "message_type": "scam",
-  "confidence": 0.89,
-  "reason": "The message asks for urgent verification of wallet and card details, consistent with a scam pattern and matching the sender's history of reported m...",
-  "evidence_message_ids": "message_0087;message_0184;message_0088"
-}

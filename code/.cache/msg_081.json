@@ -1,7 +1,0 @@
-{
-  "action": "notify",
-  "message_type": "urgent",
-  "confidence": 0.89,
-  "reason": "A trusted group admin sent a time-sensitive update that should interrupt the user.",
-  "evidence_message_ids": "message_0217"
-}
