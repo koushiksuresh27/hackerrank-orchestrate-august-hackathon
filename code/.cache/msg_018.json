@@ -1,0 +1,7 @@
+{
+  "action": "digest",
+  "message_type": "unknown",
+  "confidence": 0.72,
+  "reason": "Unable to determine urgency. Routing to digest as a safe default.",
+  "evidence_message_ids": "message_0092;message_0091;message_0026"
+}

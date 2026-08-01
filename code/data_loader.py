@@ -15,14 +15,19 @@ from config import CSV_FILES, DATASET_DIR
 logger = logging.getLogger(__name__)
 
 
-def _read_csv(path: Path) -> list[dict[str, str]]:
+def _clean_value(val: str | None) -> str | None:
+    """Convert empty strings to None."""
+    return None if val == "" else val
+
+
+def _read_csv(path: Path) -> list[dict[str, Any]]:
     """Read a CSV file and return a list of row dicts. Handles multiline fields."""
     if not path.exists():
         logger.error(f"CSV file not found: {path}")
         return []
     with open(path, "r", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
-        rows = list(reader)
+        rows = [{k: _clean_value(v) for k, v in row.items()} for row in reader]
     logger.info(f"Loaded {len(rows)} rows from {path.name}")
     return rows
 
@@ -53,7 +58,8 @@ class DataStore:
         group = store.get_group("group_002")
     """
 
-    def __init__(self):
+    def __init__(self, dataset_dir: Path | str | None = None):
+        self.dataset_dir = Path(dataset_dir) if dataset_dir else DATASET_DIR
         # Raw row lists
         self.messages_raw: list[dict] = []
         self.sample_messages_raw: list[dict] = []
@@ -96,19 +102,19 @@ class DataStore:
         logger.info("Loading all dataset files...")
 
         # Load raw data
-        self.messages_raw = _read_csv(CSV_FILES["messages"])
-        self.sample_messages_raw = _read_csv(CSV_FILES["sample_messages"])
-        self.users_raw = _read_csv(CSV_FILES["users"])
-        self.groups_raw = _read_csv(CSV_FILES["groups"])
-        self.group_members_raw = _read_csv(CSV_FILES["group_members"])
-        self.business_accounts_raw = _read_csv(CSV_FILES["business_accounts"])
-        self.user_business_history_raw = _read_csv(CSV_FILES["user_business_history"])
-        self.message_history_raw = _read_csv(CSV_FILES["message_history"])
-        self.message_events_raw = _read_csv(CSV_FILES["message_events"])
-        self.images_raw = _read_csv(CSV_FILES["images"])
-        self.voice_notes_raw = _read_csv(CSV_FILES["voice_notes"])
+        self.messages_raw = _read_csv(self.dataset_dir / CSV_FILES["messages"].name)
+        self.sample_messages_raw = _read_csv(self.dataset_dir / CSV_FILES["sample_messages"].name)
+        self.users_raw = _read_csv(self.dataset_dir / CSV_FILES["users"].name)
+        self.groups_raw = _read_csv(self.dataset_dir / CSV_FILES["groups"].name)
+        self.group_members_raw = _read_csv(self.dataset_dir / CSV_FILES["group_members"].name)
+        self.business_accounts_raw = _read_csv(self.dataset_dir / CSV_FILES["business_accounts"].name)
+        self.user_business_history_raw = _read_csv(self.dataset_dir / CSV_FILES["user_business_history"].name)
+        self.message_history_raw = _read_csv(self.dataset_dir / CSV_FILES["message_history"].name)
+        self.message_events_raw = _read_csv(self.dataset_dir / CSV_FILES["message_events"].name)
+        self.images_raw = _read_csv(self.dataset_dir / CSV_FILES["images"].name)
+        self.voice_notes_raw = _read_csv(self.dataset_dir / CSV_FILES["voice_notes"].name)
         self.daily_notification_summary_raw = _read_csv(
-            CSV_FILES["daily_notification_summary"]
+            self.dataset_dir / CSV_FILES["daily_notification_summary"].name
         )
 
         # Build primary key indices
@@ -170,7 +176,7 @@ class DataStore:
         """Get business account by business_id."""
         return self.business_accounts.get(business_id)
 
-    def get_group_membership(self, group_id: str, user_id: str) -> dict | None:
+    def get_group_member(self, user_id: str, group_id: str) -> dict | None:
         """Get the membership record for a user in a specific group."""
         return self.group_membership.get(f"{group_id}:{user_id}")
 

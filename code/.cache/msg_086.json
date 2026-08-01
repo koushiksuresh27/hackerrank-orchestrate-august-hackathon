@@ -1,0 +1,7 @@
+{
+  "action": "mute",
+  "message_type": "scam",
+  "confidence": 0.82,
+  "reason": "The message contains suspicious signals that suggest it may be a scam.",
+  "evidence_message_ids": "message_0222"
+}

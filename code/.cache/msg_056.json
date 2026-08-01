@@ -1,0 +1,7 @@
+{
+  "action": "notify",
+  "message_type": "personal",
+  "confidence": 0.82,
+  "reason": "The message contains a direct mention of the user.",
+  "evidence_message_ids": "message_0226;message_0168;message_0167"
+}

@@ -242,7 +242,7 @@ def _check_heuristics(rows: list[dict], store: DataStore, report: dict) -> None:
         group_id = msg.get("group_id", "")
         user_id = msg.get("user_id", "")
         if group_id and user_id:
-            membership = store.get_group_membership(group_id, user_id)
+            membership = store.get_group_member(user_id, group_id)
             if membership and membership.get("group_muted_by_user") == "1":
                 if action == "notify":
                     # Only flag if there's no direct mention

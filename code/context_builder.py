@@ -91,7 +91,7 @@ def build_context(message: dict, store: DataStore) -> dict[str, Any]:
             context["group"] = None
 
         # User's membership in this group
-        membership = store.get_group_membership(group_id, user_id)
+        membership = store.get_group_member(user_id, group_id)
         if membership:
             context["user_group_membership"] = {
                 "role": membership.get("role", ""),
@@ -115,7 +115,7 @@ def build_context(message: dict, store: DataStore) -> dict[str, Any]:
 
         # Sender's role in the group
         if sender_user_id:
-            sender_membership = store.get_group_membership(group_id, sender_user_id)
+            sender_membership = store.get_group_member(sender_user_id, group_id)
             if sender_membership:
                 context["sender_group_role"] = sender_membership.get("role", "member")
             else:

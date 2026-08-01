@@ -1,0 +1,7 @@
+{
+  "action": "mute",
+  "message_type": "promotion",
+  "confidence": 0.86,
+  "reason": "User has opted out of promotional messages from this business.",
+  "evidence_message_ids": "message_0034;message_0112;message_0111"
+}

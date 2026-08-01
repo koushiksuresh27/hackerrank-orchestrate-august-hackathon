@@ -35,7 +35,7 @@ from evaluator import evaluate_output, print_report
 from media_handler import process_media
 from output_writer import write_output
 from provider_router import ProviderRouter
-from signal_extractor import extract_signals
+from signal_extractor import extract_signals, early_exit
 from validator import validate_and_repair
 
 
@@ -66,7 +66,7 @@ def main():
     cache = ResponseCache()
 
     if args.clear_cache:
-        cache.clear()
+        cache.clear_all()
         logger.info("Cache cleared")
 
     provider_router = ProviderRouter()
@@ -85,9 +85,8 @@ def main():
 
         try:
             # Check cache first
-            cached = cache.get(message_id)
-            if cached and not args.clear_cache:
-                results[message_id] = cached
+            if cache.is_cached(message_id):
+                results[message_id] = cache.load(message_id)
                 cache_hits += 1
                 continue
 
@@ -95,7 +94,7 @@ def main():
             context = build_context(message, store)
 
             # Step 2: Extract signals
-            signals = extract_signals(message, context)
+            signals = extract_signals(message, store)
 
             # Step 3: Process media (voice transcription, image encoding)
             media_result = process_media(message, store)
@@ -104,25 +103,27 @@ def main():
             evidence_ids = select_evidence(message, context, store)
 
             # Step 5: Route message
-            if args.dry_run:
+            early_decision = early_exit(signals)
+            if early_decision:
+                decision = early_decision
+                decision["evidence_message_ids"] = evidence_ids
+                signal_skips += 1
+            elif args.dry_run:
                 # Force rule-based fallback
                 decision = agent._rule_based_fallback(message, context, signals)
                 decision["evidence_message_ids"] = evidence_ids
+                llm_calls += 1
             else:
                 decision = agent.route_message(
                     message, context, signals, media_result, evidence_ids, store
                 )
-
-            if signals.should_skip_llm():
-                signal_skips += 1
-            else:
                 llm_calls += 1
 
             # Step 6: Validate and repair
             validated = validate_and_repair(decision, message_id, store)
 
-            # Cache the result
-            cache.put(message_id, validated)
+            # Save result immediately to disk (crash-safe)
+            cache.save(message_id, validated)
             results[message_id] = validated
 
             # Progress logging
@@ -144,9 +145,6 @@ def main():
                 "confidence": 0.72,
                 "evidence_message_ids": "none",
             }
-
-    # Phase 4: Save cache
-    cache.save_to_disk()
 
     # Phase 5: Write output
     logger.info("Phase 5: Writing output...")

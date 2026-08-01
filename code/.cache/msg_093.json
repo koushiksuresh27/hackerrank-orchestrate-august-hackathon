@@ -1,0 +1,7 @@
+{
+  "action": "mute",
+  "message_type": "scam",
+  "confidence": 0.9,
+  "reason": "Message requests OTP or verification code from the user, consistent with a phishing or scam pattern.",
+  "evidence_message_ids": "none"
+}

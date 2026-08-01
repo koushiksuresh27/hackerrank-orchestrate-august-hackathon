@@ -15,7 +15,7 @@ from evidence_selector import get_evidence_context, select_evidence
 from media_handler import get_image_mime_type
 from prompts.router_prompt import build_full_prompt
 from provider_router import ProviderRouter
-from signal_extractor import SignalResult, format_signals_for_prompt
+from signal_extractor import early_exit
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ class RoutingAgent:
         self,
         message: dict,
         context: dict,
-        signals: SignalResult,
+        signals: dict,
         media_result: dict,
         evidence_ids: str,
         store: Any,  # DataStore
@@ -51,13 +51,6 @@ class RoutingAgent:
         """
         message_id = message.get("message_id", "")
 
-        # 1. Check for pre-decision from signal extraction (prompt injection, etc.)
-        if signals.should_skip_llm():
-            logger.info(f"[{message_id}] Pre-decision from signals: {signals.pre_decision}")
-            decision = signals.pre_decision.copy()
-            decision["evidence_message_ids"] = evidence_ids
-            return decision
-
         # 2. Build prompt with augmented text
         # Replace message text with augmented version (includes voice transcription)
         augmented_context = context.copy()
@@ -66,7 +59,14 @@ class RoutingAgent:
             augmented_context["message"]["message_text"] = media_result["augmented_text"]
 
         context_text = format_context_for_prompt(augmented_context)
-        signals_text = format_signals_for_prompt(signals)
+        
+        # Format signals
+        active_signals = [k for k, v in signals.items() if v is True and k != "ambiguity_score"]
+        if active_signals:
+            signals_text = "=== PRE-ANALYSIS SIGNALS ===\n" + "\n".join(f"[!] {k}" for k in active_signals)
+        else:
+            signals_text = "=== PRE-ANALYSIS SIGNALS ===\nNo significant signals detected."
+
         evidence_text = get_evidence_context(evidence_ids, store)
 
         prompt = build_full_prompt(context_text, signals_text, evidence_text)
@@ -95,7 +95,7 @@ class RoutingAgent:
         return fallback
 
     def _rule_based_fallback(
-        self, message: dict, context: dict, signals: SignalResult
+        self, message: dict, context: dict, signals: dict
     ) -> dict:
         """
         Rule-based fallback for when all LLM providers fail.
@@ -107,7 +107,7 @@ class RoutingAgent:
         conv_type = msg.get("conversation_type", "")
 
         # Scam signals: domain mismatch + OTP/password keywords
-        if signals.is_domain_mismatch or signals.is_injection:
+        if signals.get("is_domain_mismatch") or signals.get("is_prompt_injection"):
             return {
                 "action": "mute",
                 "message_type": "scam",
@@ -116,7 +116,7 @@ class RoutingAgent:
             }
 
         # High forward → mute as forward/spam
-        if signals.is_high_forward:
+        if signals.get("is_chain_forward"):
             return {
                 "action": "mute",
                 "message_type": "forward",
@@ -125,7 +125,7 @@ class RoutingAgent:
             }
 
         # Muted group without direct mention → mute
-        if signals.is_group_muted and not signals.has_direct_mention:
+        if signals.get("is_group_muted") and not signals.get("is_direct_mention"):
             return {
                 "action": "mute",
                 "message_type": "unknown",
@@ -136,7 +136,7 @@ class RoutingAgent:
         # OTP/password keywords from unknown sender
         scam_keywords = ["otp", "password", "verify now", "account blocked",
                          "payment failed", "click here", "act now"]
-        if signals.is_first_contact and any(kw in text for kw in scam_keywords):
+        if signals.get("sender_is_known") is False and any(kw in text for kw in scam_keywords):
             return {
                 "action": "mute",
                 "message_type": "scam",
@@ -145,7 +145,7 @@ class RoutingAgent:
             }
 
         # Direct mention → notify
-        if signals.has_direct_mention:
+        if signals.get("is_direct_mention"):
             return {
                 "action": "notify",
                 "message_type": "personal",
@@ -154,7 +154,7 @@ class RoutingAgent:
             }
 
         # Opted-out promotions → mute
-        if signals.is_opted_out:
+        if signals.get("is_opted_out"):
             return {
                 "action": "mute",
                 "message_type": "promotion",
@@ -167,5 +167,5 @@ class RoutingAgent:
             "action": "digest",
             "message_type": "unknown",
             "reason": "Unable to determine urgency. Routing to digest as a safe default.",
-            "confidence": 0.72,
+            "confidence": 0.78,
         }
