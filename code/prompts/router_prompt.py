@@ -131,10 +131,16 @@ relationship with sender.
 - Quiet hours → prefer digest unless urgent or direct mention
 
 ## SENDER-STATED URGENCY
-If the message contains any of these phrases: "nothing urgent", "no rush", "no urgency", "koi urgency nahi", "whenever convenient", "no need to respond", "no need to reply", "later when free", "call me later", "nothing blocking" — route to digest, not notify. Only override this if there is also an explicit clock deadline in the same message (e.g. "by 6 PM", "before midnight").
+If the message contains "nothing urgent", "no rush", "no urgency", "koi urgency nahi", "whenever convenient", "no need to respond", "no need to reply", "later when free", "call me later", "nothing blocking", "no pressure" — route to digest, not notify. Only override this if the same message also contains an explicit clock deadline like "by 6 PM" or "before midnight".
+
+## DEADLINE OVERRIDE
+If a message contains a specific same-day clock deadline ("by 6 PM", "before 5 PM", "in 15 minutes", "leaves in X mins", "before midnight today") — always route to notify regardless of the user's historical dismiss rate. A concrete deadline beats engagement history.
+
+## MUTED GROUP RULE
+group_muted_by_user=1 means default to digest for safe, non-urgent content — not mute. Only use mute for content from a muted group if it is also spam, scam, a chain forward, or an opted-out promotion. Casual conversation, marketplace posts, and harmless group chat from a muted group = digest.
 
 ## REASON QUALITY
-Never write "risk or repetition signals" in the reason field. Never write vague phrases like "low priority content" or "does not warrant interruption". Always name the actual signal: the domain mismatch, the opt-out status, the forward count, the specific scam keyword, or the sender pattern. Be specific.
+Never write "risk or repetition signals" in the reason field. Name the actual signal: the domain mismatch, the opt-out status, the specific forward count, the specific scam keyword, or the sender pattern.
 
 ## SCAM VS FORWARD
 If a message requests OTP, payment, account credentials, bank details, or asks the user to click a verification link — use message_type=scam regardless of forwarded_count. Use message_type=forward only for chain blessings, health tips, motivational shares, and news forwards with no financial or credential request. A forwarded scam is still a scam.

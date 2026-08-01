@@ -47,19 +47,12 @@ GROQ_API_KEY_2 = os.environ.get("GROQ_API_KEY_2", "")
 # Provider Configuration
 # ---------------------------------------------------------------------------
 # Order defines fallback chain: Claude → Gemini → Groq → rule-based
-PROVIDER_ORDER = ["claude", "gemini", "groq", "rule_based"]
+PROVIDER_ORDER = ["groq_vision", "groq", "rule_based"]
 
 PROVIDER_CONFIG = {
-    "gemini": {
-        "model": "gemini-2.0-flash",
-        "base_url": "https://generativelanguage.googleapis.com/v1beta",
-        "max_tokens": 1024,
-        "temperature": 0.1,
-        "supports_vision": True,
-    },
-    "claude": {
-        "model": "claude-sonnet-4-6",
-        "base_url": "https://api.anthropic.com/v1",
+    "groq_vision": {
+        "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+        "base_url": "https://api.groq.com/openai/v1",
         "max_tokens": 1024,
         "temperature": 0.1,
         "supports_vision": True,

@@ -82,10 +82,8 @@ class ProviderRouter:
         image_mime: str,
     ) -> dict | None:
         """Dispatch to the appropriate provider handler."""
-        if provider_name == "gemini":
-            return self._call_gemini(prompt, image_base64, image_mime)
-        elif provider_name == "claude":
-            return self._call_claude(prompt, image_base64, image_mime)
+        if provider_name == "groq_vision":
+            return self._call_groq_vision(prompt, image_base64, image_mime)
         elif provider_name == "groq":
             return self._call_groq(prompt)
         return None
@@ -233,12 +231,85 @@ class ProviderRouter:
 
         return None
 
+    def _call_groq_vision(
+        self, prompt: str, image_base64: str | None, image_mime: str
+    ) -> dict | None:
+        """Call Groq vision model using OpenAI-compatible format with image support."""
+        keys = [k for k in [
+            os.getenv("GROQ_API_KEY"),
+            os.getenv("GROQ_API_KEY_2"),
+            os.getenv("GROQ_API_KEY_3"),
+            os.getenv("GROQ_API_KEY_4"),
+            os.getenv("GROQ_API_KEY_5"),
+        ] if k]
+    
+        if not keys:
+            return None
+    
+        config = PROVIDER_CONFIG["groq_vision"]
+    
+        if image_base64:
+            content = [
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:{image_mime};base64,{image_base64}"
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": prompt
+                }
+            ]
+        else:
+            content = prompt
+    
+        payload = {
+            "model": config["model"],
+            "max_tokens": config["max_tokens"],
+            "temperature": config["temperature"],
+            "messages": [{"role": "user", "content": content}],
+        }
+    
+        for api_key in keys:
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            }
+            for attempt in range(MAX_RETRIES):
+                try:
+                    resp = requests.post(
+                        f"{config['base_url']}/chat/completions",
+                        json=payload,
+                        headers=headers,
+                        timeout=REQUEST_TIMEOUT_SECONDS,
+                    )
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        text = (
+                            data.get("choices", [{}])[0]
+                            .get("message", {})
+                            .get("content", "")
+                        )
+                        return _parse_json_response(text)
+                    elif resp.status_code == 429:
+                        logger.warning("Groq vision rate limited, trying next key...")
+                        break
+                    else:
+                        raise Exception(f"HTTP {resp.status_code} - {resp.text[:200]}")
+                except requests.Timeout:
+                    logger.warning(f"Groq vision timeout (attempt {attempt + 1})")
+                    continue
+        return None
+
     def _call_groq(self, prompt: str) -> dict | None:
         """Call Groq API (OpenAI-compatible format, text only)."""
         keys = [k for k in [
             os.getenv("GROQ_API_KEY"),
             os.getenv("GROQ_API_KEY_2"),
             os.getenv("GROQ_API_KEY_3"),
+            os.getenv("GROQ_API_KEY_4"),
+            os.getenv("GROQ_API_KEY_5"),
         ] if k]
         
         if not keys:
