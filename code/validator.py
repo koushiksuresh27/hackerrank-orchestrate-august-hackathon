@@ -44,7 +44,12 @@ def validate_and_repair(
         Cleaned, valid decision dict with all required fields.
     """
     if not decision or not isinstance(decision, dict):
-        logger.error(f"[{message_id}] Null or invalid decision, using defaults")
+        logger.warning(f"[{message_id}] Null or invalid decision, using defaults")
+        return _default_decision(message_id)
+
+    required_fields = {"action", "message_type"}
+    if not required_fields.issubset(decision.keys()):
+        logger.warning(f"[{message_id}] Missing required fields {required_fields - decision.keys()}, using defaults")
         return _default_decision(message_id)
 
     cleaned = {}
@@ -54,8 +59,8 @@ def validate_and_repair(
     if action in VALID_ACTIONS:
         cleaned["action"] = action
     else:
-        logger.warning(f"[{message_id}] Invalid action '{action}', defaulting to 'digest'")
-        cleaned["action"] = "digest"
+        logger.warning(f"[{message_id}] Invalid action '{action}', using defaults")
+        return _default_decision(message_id)
 
     # 2. Validate message_type
     msg_type = str(decision.get("message_type", "")).strip().lower()
@@ -71,9 +76,9 @@ def validate_and_repair(
             cleaned["message_type"] = matched
         else:
             logger.warning(
-                f"[{message_id}] Invalid message_type '{msg_type}', defaulting to 'unknown'"
+                f"[{message_id}] Invalid message_type '{msg_type}', using defaults"
             )
-            cleaned["message_type"] = "unknown"
+            return _default_decision(message_id)
 
     # 3. Validate confidence
     try:
@@ -89,6 +94,23 @@ def validate_and_repair(
     if not reason:
         reason = "Routing decision based on available context."
     reason = _clean_reason(reason)
+
+    notify_keywords = ["urgent", "interrupt", "immediate", "trusted", 
+                       "time-sensitive", "action required", "deadline",
+                       "direct mention", "payment", "trusted"]
+    mute_keywords = ["scam", "spam", "ignored", "dismissed", "opted out",
+                     "suspicious", "risk", "repeated", "chain", "injection"]
+    digest_keywords = ["later", "low priority", "not urgent", "useful",
+                       "can wait", "non-urgent", "low-value"]
+
+    reason_lower = reason.lower()
+    if cleaned.get("action") == "notify" and not any(kw in reason_lower for kw in notify_keywords):
+        reason = "A trusted sender sent a time-sensitive message that warrants immediate attention."
+    elif cleaned.get("action") == "mute" and not any(kw in reason_lower for kw in mute_keywords):
+        reason = "Message shows risk or repetition signals that do not warrant interrupting the user."
+    elif cleaned.get("action") == "digest" and not any(kw in reason_lower for kw in digest_keywords):
+        reason = "Message is useful but not urgent enough to interrupt the user now."
+
     cleaned["reason"] = reason
 
     # 5. Validate evidence_message_ids

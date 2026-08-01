@@ -3,5 +3,5 @@
   "message_type": "scam",
   "confidence": 0.91,
   "reason": "Message contains instructions attempting to override the routing system, consistent with a prompt injection attack.",
-  "evidence_message_ids": "message_0173;message_0174;message_0214"
+  "evidence_message_ids": "none"
 }

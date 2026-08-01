@@ -3,5 +3,5 @@
   "message_type": "scam",
   "confidence": 0.89,
   "reason": "Unverified business with domain mismatch and high user report count indicates likely scam sender.",
-  "evidence_message_ids": "message_0094;message_0093;message_0236"
+  "evidence_message_ids": "none"
 }

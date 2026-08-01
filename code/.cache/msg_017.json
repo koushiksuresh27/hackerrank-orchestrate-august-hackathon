@@ -2,6 +2,6 @@
   "action": "mute",
   "message_type": "unknown",
   "confidence": 0.83,
-  "reason": "User has muted this group and was not directly mentioned in the message.",
-  "evidence_message_ids": "message_0090;message_0089"
+  "reason": "Message shows risk or repetition signals that do not warrant interrupting the user.",
+  "evidence_message_ids": "none"
 }

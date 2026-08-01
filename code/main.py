@@ -149,10 +149,17 @@ def main():
     # Phase 5: Write output
     logger.info("Phase 5: Writing output...")
     
-    def fallback_wrapper(row):
-        return agent._rule_based_fallback(row, {"message": row}, {})
-        
-    write_final_output(store.messages_raw, cache, fallback_wrapper, OUTPUT_PATH)
+    messages_df = store.messages_raw
+    write_final_output(
+        messages_df=messages_df,
+        cache=cache,
+        fallback_fn=lambda row: agent._rule_based_fallback(
+            row, 
+            build_context(row, store),
+            extract_signals(row, store)
+        ),
+        output_path=OUTPUT_PATH
+    )
     success = True
 
     elapsed = time.time() - start_time

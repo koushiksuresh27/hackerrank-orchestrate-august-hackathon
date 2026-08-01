@@ -3,5 +3,5 @@
   "message_type": "forward",
   "confidence": 0.88,
   "reason": "High-forward chain message with blessing or luck keywords has no personal relevance to the user.",
-  "evidence_message_ids": "message_0131;message_0132"
+  "evidence_message_ids": "none"
 }

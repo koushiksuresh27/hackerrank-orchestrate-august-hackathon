@@ -268,14 +268,14 @@ def _build_sender_history(
                 reported += _safe_int(evt.get("message_reported", "0"))
                 muted_after += _safe_int(evt.get("muted_after_message", "0"))
 
-    recent_5 = history_messages[-5:]
+    recent_5 = sorted(history_messages, key=lambda x: x.get("created_at", ""), reverse=True)[:5]
     recent_messages = []
     for m in recent_5:
         msg_id = m.get("message_id", "")
-        text = m.get("message_text", "").replace("\n", " ").replace("\r", " ")
+        text = (m.get("message_text") or "").replace("\n", " ").replace("\r", " ")
         if len(text) > 100:
             text = text[:97] + "..."
-        created_at = m.get("created_at", "")
+        created_at = m.get("created_at", "")[:10]
         
         events = store.get_message_events(msg_id)
         event_types = []
