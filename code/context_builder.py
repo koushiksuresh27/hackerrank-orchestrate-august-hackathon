@@ -255,6 +255,8 @@ def _build_sender_history(
     reported = 0
     muted_after = 0
 
+    history_messages = sorted(history_messages, key=lambda x: x.get("created_at", ""))
+
     for m in history_messages:
         msg_id = m.get("message_id", "")
         events = store.get_message_events(msg_id)
@@ -265,6 +267,36 @@ def _build_sender_history(
                 dismissed += _safe_int(evt.get("notification_dismissed", "0"))
                 reported += _safe_int(evt.get("message_reported", "0"))
                 muted_after += _safe_int(evt.get("muted_after_message", "0"))
+
+    recent_5 = history_messages[-5:]
+    recent_messages = []
+    for m in recent_5:
+        msg_id = m.get("message_id", "")
+        text = m.get("message_text", "").replace("\n", " ").replace("\r", " ")
+        if len(text) > 100:
+            text = text[:97] + "..."
+        created_at = m.get("created_at", "")
+        
+        events = store.get_message_events(msg_id)
+        event_types = []
+        for evt in events:
+            if evt.get("user_id") == user_id:
+                if _safe_int(evt.get("message_replied", "0")):
+                    event_types.append("replied")
+                elif _safe_int(evt.get("message_reported", "0")):
+                    event_types.append("reported")
+                elif _safe_int(evt.get("message_opened", "0")):
+                    event_types.append("opened")
+                elif _safe_int(evt.get("notification_dismissed", "0")):
+                    event_types.append("dismissed")
+        
+        ev_str = "/".join(event_types) if event_types else "none"
+        recent_messages.append({
+            "message_id": msg_id,
+            "text": text,
+            "created_at": created_at,
+            "event": ev_str
+        })
 
     return {
         "total_messages": total,
@@ -279,6 +311,7 @@ def _build_sender_history(
             (opened + replied) / max(total, 1), 2
         ),
         "dismiss_rate": round(dismissed / max(total, 1), 2),
+        "recent_messages": recent_messages,
     }
 
 
@@ -407,6 +440,12 @@ def format_context_for_prompt(context: dict) -> str:
             parts.append(f"User Reported: {sh['user_reported']} times")
         if sh.get("user_muted_after", 0) > 0:
             parts.append(f"User Muted After: {sh['user_muted_after']} times")
+            
+        recent_msgs = sh.get("recent_messages", [])
+        if recent_msgs:
+            parts.append("\nRecent Messages:")
+            for i, rm in enumerate(recent_msgs, 1):
+                parts.append(f"{i}. [{rm['created_at']}] {rm['message_id']} - {rm['event'].upper()} - \"{rm['text']}\"")
 
     # Notification load
     nl = context.get("notification_load_7d")

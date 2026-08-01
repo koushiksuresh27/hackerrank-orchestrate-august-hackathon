@@ -79,17 +79,35 @@ class RoutingAgent:
 
         llm_result = self.router.call_llm(prompt, image_base64, image_mime)
 
-        # 4. If LLM succeeded, merge with evidence
+        # 4. If LLM succeeded, check confidence for two-step loop
         if llm_result:
-            llm_result["evidence_message_ids"] = evidence_ids
-            logger.info(
-                f"[{message_id}] LLM decision: {llm_result.get('action')} / "
-                f"{llm_result.get('message_type')} (conf: {llm_result.get('confidence')})"
-            )
-            return llm_result
+            confidence = float(llm_result.get("confidence", 0.0))
+            if confidence >= 0.82:
+                llm_result["evidence_message_ids"] = evidence_ids
+                logger.info(
+                    f"[{message_id}] LLM decision (Pass 1): {llm_result.get('action')} / "
+                    f"{llm_result.get('message_type')} (conf: {confidence})"
+                )
+                return llm_result
+                
+            # Step 2: Confidence < 0.82 -> enrich and retry
+            logger.info(f"[{message_id}] Confidence {confidence} < 0.82, enriching prompt for second pass")
+            enriched_prompt = prompt + "\n\nSECOND PASS: Previous confidence was low. Focus especially on: sender history, user engagement pattern, and whether this message type has been dismissed before by this user."
+            
+            second_result = self.router.call_llm(enriched_prompt, image_base64, image_mime)
+            if second_result:
+                second_result["evidence_message_ids"] = evidence_ids
+                logger.info(
+                    f"[{message_id}] LLM decision (Pass 2): {second_result.get('action')} / "
+                    f"{second_result.get('message_type')} (conf: {second_result.get('confidence')})"
+                )
+                return second_result
+            else:
+                llm_result["evidence_message_ids"] = evidence_ids
+                return llm_result
 
-        # 5. All LLM providers failed → rule-based fallback
-        logger.warning(f"[{message_id}] All LLM providers failed, using rule-based fallback")
+        # 5. First LLM call failed entirely → rule-based fallback
+        logger.warning(f"[{message_id}] First LLM call failed entirely, using rule-based fallback")
         fallback = self._rule_based_fallback(message, context, signals)
         fallback["evidence_message_ids"] = evidence_ids
         return fallback

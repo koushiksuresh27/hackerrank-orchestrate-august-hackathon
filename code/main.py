@@ -26,7 +26,7 @@ logging.basicConfig(
 logger = logging.getLogger("main")
 
 from agent import RoutingAgent
-from cache import ResponseCache
+from cache import ResponseCache, write_final_output
 from config import OUTPUT_PATH
 from context_builder import build_context
 from data_loader import DataStore
@@ -105,8 +105,8 @@ def main():
             # Step 5: Route message
             early_decision = early_exit(signals)
             if early_decision:
+                early_decision["evidence_message_ids"] = "none"
                 decision = early_decision
-                decision["evidence_message_ids"] = evidence_ids
                 signal_skips += 1
             elif args.dry_run:
                 # Force rule-based fallback
@@ -148,7 +148,12 @@ def main():
 
     # Phase 5: Write output
     logger.info("Phase 5: Writing output...")
-    success = write_output(results)
+    
+    def fallback_wrapper(row):
+        return agent._rule_based_fallback(row, {"message": row}, {})
+        
+    write_final_output(store.messages_raw, cache, fallback_wrapper, OUTPUT_PATH)
+    success = True
 
     elapsed = time.time() - start_time
     logger.info(f"\nPipeline completed in {elapsed:.1f}s")
