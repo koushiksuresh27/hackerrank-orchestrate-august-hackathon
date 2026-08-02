@@ -130,7 +130,7 @@ def main():
             cache.save(message_id, validated)
             results[message_id] = validated
 
-            time.sleep(2)  # 2 seconds between messages = 30/min max
+            time.sleep(0.5)  # reduced — key rotation handles rate limiting now
 
             # Progress logging
             if (i + 1) % 10 == 0 or (i + 1) == total_messages:

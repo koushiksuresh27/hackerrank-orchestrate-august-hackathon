@@ -271,12 +271,12 @@ class ProviderRouter:
             "messages": [{"role": "user", "content": content}],
         }
     
-        for api_key in keys:
-            headers = {
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            }
-            for attempt in range(MAX_RETRIES):
+        for attempt in range(2):  # try all 5 keys twice before giving up
+            for api_key in keys:
+                headers = {
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                }
                 try:
                     resp = requests.post(
                         f"{config['base_url']}/chat/completions",
@@ -293,13 +293,17 @@ class ProviderRouter:
                         )
                         return _parse_json_response(text)
                     elif resp.status_code == 429:
-                        logger.warning("Groq vision rate limited, trying next key...")
-                        break
+                        logger.warning(f"Groq vision rate limited, trying next key...")
+                        time.sleep(0.5)
+                        continue
                     else:
                         raise Exception(f"HTTP {resp.status_code} - {resp.text[:200]}")
                 except requests.Timeout:
-                    logger.warning(f"Groq vision timeout (attempt {attempt + 1})")
+                    logger.warning(f"Groq vision timeout on this key, trying next...")
                     continue
+            if attempt == 0:
+                logger.warning("All Groq vision keys rate limited, waiting 60s before retry...")
+                time.sleep(60)
         return None
 
     def _call_groq(self, prompt: str) -> dict | None:
@@ -325,13 +329,12 @@ class ProviderRouter:
             "messages": [{"role": "user", "content": prompt}],
         }
 
-        for api_key in keys:
-            headers = {
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            }
-
-            for attempt in range(MAX_RETRIES):
+        for attempt in range(2):  # try all 5 keys twice before giving up
+            for api_key in keys:
+                headers = {
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                }
                 try:
                     resp = requests.post(
                         f"{config['base_url']}/chat/completions",
@@ -350,15 +353,20 @@ class ProviderRouter:
                         return _parse_json_response(text)
 
                     elif resp.status_code == 429:
-                        logger.warning("Groq rate limited, trying next key or falling back...")
-                        break
+                        logger.warning(f"Groq rate limited, trying next key...")
+                        time.sleep(0.5)
+                        continue
 
                     else:
                         raise Exception(f"HTTP {resp.status_code} - {resp.text[:200]}")
 
                 except requests.Timeout:
-                    logger.warning(f"Groq timeout (attempt {attempt + 1})")
+                    logger.warning(f"Groq timeout on this key, trying next...")
                     continue
+
+            if attempt == 0:
+                logger.warning("All Groq keys rate limited, waiting 60s before retry...")
+                time.sleep(60)
 
         return None
 

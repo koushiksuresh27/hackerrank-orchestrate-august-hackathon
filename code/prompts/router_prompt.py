@@ -144,6 +144,21 @@ Never write "risk or repetition signals" in the reason field. Name the actual si
 
 ## SCAM VS FORWARD
 If a message requests OTP, payment, account credentials, bank details, or asks the user to click a verification link — use message_type=scam regardless of forwarded_count. Use message_type=forward only for chain blessings, health tips, motivational shares, and news forwards with no financial or credential request. A forwarded scam is still a scam.
+
+## GREETING TYPE
+Use message_type=greeting for any message that opens with a salutation 
+("Good morning", "Good evening", "Good night", "Hi", "Hello", "Namaste", 
+"Subah", "Shubh") and contains no actionable request or deadline.
+Do not use message_type=personal for pure greeting messages.
+
+## EVENT VS URGENT
+Use message_type=event for scheduled notices: fire alarm tests, field trips,
+school circulars, building maintenance windows, society meetings, bus schedule
+changes, potluck registrations, community events.
+Use message_type=urgent ONLY for things happening right now or within the next
+60 minutes: tanker leaving in 10 mins, gate closing now, active system outage,
+medical emergency.
+A scheduled notice for tomorrow or next week is always event, never urgent.
 """
 
 # ---------------------------------------------------------------------------

@@ -23,6 +23,12 @@ URGENCY_OVERRIDE_PHRASES = [
     "gate", "tanker", "arriving",
 ]
 
+SCAM_CONTENT_PHRASES = [
+    "reward", "selected", "claim", "voucher", "verify", "account",
+    "login", "security", "failed", "blocked", "otp", "bank",
+    "payment", "processing fee", "click", "link", "expire",
+]
+
 def should_early_exit_high_forward(
     text: str, forwarded_count: int, sender_is_admin: bool, threshold: int = 8
 ) -> bool:
@@ -31,6 +37,9 @@ def should_early_exit_high_forward(
     t = text.lower()
     has_urgency = any(phrase in t for phrase in URGENCY_OVERRIDE_PHRASES)
     if has_urgency and sender_is_admin:
+        return False
+    has_scam_content = any(phrase in t for phrase in SCAM_CONTENT_PHRASES)
+    if has_scam_content:
         return False
     return True
 
@@ -44,7 +53,9 @@ _CHAIN_REGEX = re.compile("|".join(re.escape(p) for p in _CHAIN_PATTERNS), re.IG
 _INJECTION_PATTERNS = [
     "routing override", "set action", "ignore sender", "assistant instruction",
     "classify as", "set confidence", "action=notify", "action=mute",
-    "action=digest", "ignore all previous"
+    "action=digest", "ignore all previous",
+    "system note for notification router",
+    "always mark this as",
 ]
 _INJECTION_REGEX = re.compile("|".join(re.escape(p) for p in _INJECTION_PATTERNS), re.IGNORECASE)
 
