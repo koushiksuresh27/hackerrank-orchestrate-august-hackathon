@@ -38,6 +38,7 @@ CSV_FILES = {
 # ---------------------------------------------------------------------------
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 GEMINI_API_KEY_2 = os.environ.get("GEMINI_API_KEY_2", "")
+GEMINI_API_KEY_3 = os.environ.get("GEMINI_API_KEY_3", "")
 CLAUDE_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 CLAUDE_API_KEY_2 = os.environ.get("ANTHROPIC_API_KEY_2", "")
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
@@ -46,12 +47,12 @@ GROQ_API_KEY_2 = os.environ.get("GROQ_API_KEY_2", "")
 # ---------------------------------------------------------------------------
 # Provider Configuration
 # ---------------------------------------------------------------------------
-# Order defines fallback chain: Claude → Gemini → Groq → rule-based
-PROVIDER_ORDER = ["groq_vision", "groq", "rule_based"]
+# Order defines fallback chain: Groq → Gemini → Claude → rule-based
+PROVIDER_ORDER = ["groq", "rule_based"]
 
 PROVIDER_CONFIG = {
     "groq_vision": {
-        "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+        "model": "qwen/qwen3.6-27b",
         "base_url": "https://api.groq.com/openai/v1",
         "max_tokens": 1024,
         "temperature": 0.1,
@@ -63,6 +64,19 @@ PROVIDER_CONFIG = {
         "max_tokens": 1024,
         "temperature": 0.1,
         "supports_vision": False,
+    },
+    "gemini": {
+        "model": "gemini-1.5-flash",
+        "base_url": "https://generativelanguage.googleapis.com/v1beta",
+        "max_tokens": 1024,
+        "temperature": 0.1,
+        "supports_vision": True,
+    },
+    "claude": {
+        "model": "claude-haiku-4-5-20251001",
+        "base_url": "https://api.anthropic.com/v1",
+        "max_tokens": 1024,
+        "supports_vision": True,
     },
 }
 

@@ -13,6 +13,7 @@ Usage:
 
 import argparse
 import logging
+import random
 import sys
 import time
 from pathlib import Path
@@ -130,7 +131,7 @@ def main():
             cache.save(message_id, validated)
             results[message_id] = validated
 
-            time.sleep(0.5)  # reduced — key rotation handles rate limiting now
+            time.sleep(3)  # change from 0.5 to 3
 
             # Progress logging
             if (i + 1) % 10 == 0 or (i + 1) == total_messages:

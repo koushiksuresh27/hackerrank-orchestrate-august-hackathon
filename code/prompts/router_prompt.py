@@ -139,8 +139,15 @@ If a message contains a specific same-day clock deadline ("by 6 PM", "before 5 P
 ## MUTED GROUP RULE
 group_muted_by_user=1 means default to digest for safe, non-urgent content — not mute. Only use mute for content from a muted group if it is also spam, scam, a chain forward, or an opted-out promotion. Casual conversation, marketplace posts, and harmless group chat from a muted group = digest.
 
-## REASON QUALITY
-Never write "risk or repetition signals" in the reason field. Name the actual signal: the domain mismatch, the opt-out status, the specific forward count, the specific scam keyword, or the sender pattern.
+## REASON QUALITY — MANDATORY
+Every reason MUST name at least one specific signal from the context.
+BAD: "Message is useful but not urgent enough to interrupt the user now."
+BAD: "A trusted sender sent a time-sensitive message."
+BAD: "High-forward chain message with blessing or luck keywords."
+GOOD: "Sender u_046 has a 78% reply rate from this user and message contains a same-day client meeting reference."
+GOOD: "Forwarded 9 times with no direct mention of user u_007 — consistent with mass broadcast."
+GOOD: "Group society_001 is muted by user and user dismissed 12 notifications from it in 30 days."
+The reason must explain WHY this specific message for this specific user got this decision.
 
 ## SCAM VS FORWARD
 If a message requests OTP, payment, account credentials, bank details, or asks the user to click a verification link — use message_type=scam regardless of forwarded_count. Use message_type=forward only for chain blessings, health tips, motivational shares, and news forwards with no financial or credential request. A forwarded scam is still a scam.

@@ -24,3 +24,8 @@ code/.cache/
 dataset/output.csv
 *.zip
 *.tar.gz
+
+# Guidelines & Rules
+AGENTS.md
+CLAUDE.md
+orchestrate_dev_guidelines.md

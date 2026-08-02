@@ -1,1 +1,11 @@
-requests>=2.31.0
+
+openai-whisper==20250625
+pandas==3.0.5
+protobuf==7.35.1
+python-dotenv==1.2.2
+requests==2.34.2
+tqdm
+Pillow
+
+Note: openai_whisper → openai-whisper (pip uses hyphens)
+Note: Requests → requests (lowercase)

@@ -269,11 +269,7 @@ def early_exit(signals: dict) -> dict | None:
             "evidence_message_ids": "none"
         }
         
-    if should_early_exit_high_forward(
-        text=signals.get("msg_text", ""),
-        forwarded_count=signals.get("forwarded_count", 0),
-        sender_is_admin=signals.get("sender_is_admin", False)
-    ):
+    if signals.get("is_high_forward") and not signals.get("is_direct_mention"):
         return {
             "action": "mute",
             "message_type": "forward",

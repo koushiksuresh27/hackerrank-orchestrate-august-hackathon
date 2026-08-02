@@ -95,6 +95,7 @@ class ProviderRouter:
         keys = [k for k in [
             os.getenv("GEMINI_API_KEY"),
             os.getenv("GEMINI_API_KEY_2"),
+            os.getenv("GEMINI_API_KEY_3"),
         ] if k]
         
         if not keys:
@@ -306,8 +307,15 @@ class ProviderRouter:
                 time.sleep(60)
         return None
 
-    def _call_groq(self, prompt: str) -> dict | None:
-        """Call Groq API (OpenAI-compatible format, text only)."""
+    def _call_groq(
+        self,
+        prompt: str,
+        image_base64: str | None = None,
+        image_mime: str = "image/jpeg",
+    ) -> dict | None:
+        """Call Groq API (OpenAI-compatible format, text only).
+        On full exhaustion falls through to Gemini → Claude → None.
+        """
         keys = [k for k in [
             os.getenv("GROQ_API_KEY"),
             os.getenv("GROQ_API_KEY_2"),
@@ -315,10 +323,10 @@ class ProviderRouter:
             os.getenv("GROQ_API_KEY_4"),
             os.getenv("GROQ_API_KEY_5"),
         ] if k]
-        
+
         if not keys:
             logger.debug("Groq API key not set")
-            return None
+            return self._call_claude_fallback(prompt, image_base64, image_mime)
 
         config = PROVIDER_CONFIG["groq"]
 
@@ -368,6 +376,151 @@ class ProviderRouter:
                 logger.warning("All Groq keys rate limited, waiting 60s before retry...")
                 time.sleep(60)
 
+        # All Groq keys exhausted — fall through to Claude
+        logger.warning("Groq fully exhausted, falling through to Claude...")
+        return self._call_claude_fallback(prompt, image_base64, image_mime)
+
+    def _call_gemini_fallback(
+        self,
+        prompt: str,
+        image_base64: str | None = None,
+        image_mime: str = "image/jpeg",
+    ) -> dict | None:
+        """Try Gemini keys in rotation, then fall through to Claude."""
+        gemini_keys = [k for k in [
+            os.getenv("GEMINI_API_KEY"),
+            os.getenv("GEMINI_API_KEY_2"),
+            os.getenv("GEMINI_API_KEY_3"),
+        ] if k]
+
+        if not gemini_keys:
+            logger.debug("No Gemini keys available, skipping to Claude")
+            return self._call_claude_fallback(prompt, image_base64, image_mime)
+
+        config = PROVIDER_CONFIG["gemini"]
+
+        parts: list[dict] = []
+        if image_base64:
+            parts.append({
+                "inline_data": {
+                    "mime_type": image_mime,
+                    "data": image_base64,
+                }
+            })
+        parts.append({"text": prompt})
+
+        payload = {
+            "contents": [{"parts": parts}],
+            "generationConfig": {
+                "temperature": config["temperature"],
+                "maxOutputTokens": config["max_tokens"],
+            },
+        }
+
+        for api_key in gemini_keys:
+            url = (
+                f"{config['base_url']}/models/{config['model']}:generateContent"
+                f"?key={api_key}"
+            )
+            try:
+                resp = requests.post(url, json=payload, timeout=REQUEST_TIMEOUT_SECONDS)
+
+                if resp.status_code == 200:
+                    data = resp.json()
+                    text = (
+                        data.get("candidates", [{}])[0]
+                        .get("content", {})
+                        .get("parts", [{}])[0]
+                        .get("text", "")
+                    )
+                    logger.info("Gemini fallback succeeded")
+                    return _parse_json_response(text)
+
+                elif resp.status_code in (429, 403, 503):
+                    logger.warning(f"Gemini key failed ({resp.status_code}), trying next key...")
+                    continue
+
+                else:
+                    logger.warning(f"Gemini unexpected HTTP {resp.status_code}, trying next key...")
+                    continue
+
+            except requests.Timeout:
+                logger.warning("Gemini timeout, trying next key...")
+                continue
+
+        logger.warning("All Gemini keys failed, falling through to Claude...")
+        return self._call_claude_fallback(prompt, image_base64, image_mime)
+
+    def _call_claude_fallback(
+        self,
+        prompt: str,
+        image_base64: str | None = None,
+        image_mime: str = "image/jpeg",
+    ) -> dict | None:
+        """Try Claude keys in rotation. Final fallback before rule_based."""
+        claude_keys = [k for k in [
+            os.getenv("ANTHROPIC_API_KEY"),
+            os.getenv("ANTHROPIC_API_KEY_2"),
+        ] if k]
+
+        if not claude_keys:
+            logger.debug("No Claude keys available")
+            return None
+
+        config = PROVIDER_CONFIG["claude"]
+
+        content: list[dict] = []
+        if image_base64:
+            content.append({
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": image_mime,
+                    "data": image_base64,
+                },
+            })
+        content.append({"type": "text", "text": prompt})
+
+        payload = {
+            "model": config["model"],
+            "max_tokens": config["max_tokens"],
+            "temperature": config.get("temperature", 0.1),
+            "messages": [{"role": "user", "content": content}],
+        }
+
+        for api_key in claude_keys:
+            headers = {
+                "x-api-key": api_key,
+                "content-type": "application/json",
+                "anthropic-version": "2023-06-01",
+            }
+            try:
+                resp = requests.post(
+                    f"{config['base_url']}/messages",
+                    json=payload,
+                    headers=headers,
+                    timeout=REQUEST_TIMEOUT_SECONDS,
+                )
+
+                if resp.status_code == 200:
+                    data = resp.json()
+                    text = data.get("content", [{}])[0].get("text", "")
+                    logger.info("Claude fallback succeeded")
+                    return _parse_json_response(text)
+
+                elif resp.status_code in (429, 529):
+                    logger.warning(f"Claude key rate limited ({resp.status_code}), trying next key...")
+                    continue
+
+                else:
+                    logger.warning(f"Claude unexpected HTTP {resp.status_code}, trying next key...")
+                    continue
+
+            except requests.Timeout:
+                logger.warning("Claude timeout, trying next key...")
+                continue
+
+        logger.warning("All Claude keys failed — returning None, rule_based will handle it")
         return None
 
 

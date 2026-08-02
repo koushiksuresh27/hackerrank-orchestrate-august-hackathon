@@ -77,6 +77,23 @@ class RoutingAgent:
         if media_result.get("image_path"):
             image_mime = get_image_mime_type(media_result["image_path"])
 
+        # Route image messages directly to Claude for vision support
+        if media_result.get("image_base64"):
+            result = self.router._call_claude_fallback(
+                prompt,
+                image_base64,
+                image_mime,
+            )
+            if result:
+                result["evidence_message_ids"] = evidence_ids
+                logger.info(
+                    f"[{message_id}] Claude vision decision: {result.get('action')} / "
+                    f"{result.get('message_type')} (conf: {result.get('confidence')})"
+                )
+                return result
+            # If Gemini fails, fall through to normal provider chain
+
+        # Normal provider chain for all other messages
         llm_result = self.router.call_llm(prompt, image_base64, image_mime)
 
         # 4. If LLM succeeded, check confidence for two-step loop
