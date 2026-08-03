@@ -1,10 +1,7 @@
 # HackerRank Orchestrate
-
-Starter repository for the **HackerRank Orchestrate** 24-hour hackathon.
-
 ## Message Notification Router
 
-Build an AI-powered system for WhatsApp that decides which messages deserve immediate attention, which should wait, and which should be muted.
+Built an AI powered system for WhatsApp that decides which messages deserve immediate attention, which should wait, and which should be muted.
 
 The system must reason over multimodal messages, including text messages, image posters/screenshots, and voice notes.
 
